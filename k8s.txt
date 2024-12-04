@@ -1,0 +1,373 @@
+POD:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+-----------
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx
+spec:
+  type: NodePort
+  selector:
+    app: nginx
+  ports:
+  - port: 80        
+    targetPort: 80
+    nodePort: 30007
+-----------
+
+===========================================================================================
+
+
+ReplicationController:
+
+apiVersion: v1
+kind: ReplicationController  
+metadata:
+  name: nginx-rc
+  labels:
+    app: nginx
+spec:
+  replicas: 3  # Number of pod replicas
+  selector:
+    app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+
+service:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx
+spec:
+  type: NodePort
+  selector:
+    app: nginx
+  ports:
+  -
+    port: 80      
+    targetPort: 80      
+    nodePort: 30007
+
+
+kubectl scale --replicas=1 ReplicationController/myrc1
+------------------
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-replicaset
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+-------
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80       # Port that the service will expose
+      targetPort: 80 # Port on the pod that the service should forward traffic to
+  type: LoadBalancer # Change to ClusterIP or NodePort based on your needs
+
+
+kubectl scale --replicas=1 ReplicaSet/nginx-replicaset
+
+
+
+
+To list rs		:kubectl get rs/replicaset
+To show addtional info	:kubectl get rs -o wide
+To show complete info	:kubectl describe rs name-of-rs
+To delete the rs	:kubectl delete rs name-of-rs
+to get lables of pods 	: kubectl get pods -l app=swiggy
+TO scale rs		: kubectl scale rs/swiggy-rs --replicas=10 (LIFO)
+
+========================================================================================================
+
+Deployment:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx  # This should match the labels of your Deployment
+  ports:
+    - protocol: TCP
+      port: 80       # Port that the service will expose
+      targetPort: 80 # Port on the pod that the service should forward traffic to
+  type: LoadBalancer # Change to ClusterIP or NodePort based on your needs 
+
+-------------------------------------
+
+update the container image:
+
+kubectl set image deployment/deployment-name my-container=image-name
+or
+kubectl edit deployment/deployment-name
+
+To roll back:
+
+kubectl rollout status deployment/deployment-name
+
+To check the status:
+
+kubectl rollout status deployment/deployment-name
+
+To get the history:
+
+kubectl rollout history deployment/deployment-name
+
+
+To rollback specific version:
+
+kubectl rollout undo deployment/deployment-name --to-revision=number
+
+kubectl scale deployment/nginx-deployment --replicas=10
+
+
+
+
+
+To list deployment	:kubectl get deploy
+To show addtional info	:kubectl get deploy -o wide
+To show complete info	:kubectl describe deploy name-of-deployment
+To delete the deploy	:kubectl delete deploy name-of-deploy
+to get lables of pods 	:kubectl get pods -l app=swiggy
+TO scale deploy		:kubectl scale deploy/name-of-deploy --replicas=10 (LIFO)
+To edit deploy		:kubectl edit deploy/name-of-deploy
+to show all pod labels	:kubectl get pods --show-labels
+To delete all pods	:kubectl delete pod --all
+
+ ====================================================================-----------------------
+DaemonSet:
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nginx-daemonset
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-daemonset-service
+spec:
+  selector:
+    app: nginx  
+  ports:
+    - protocol: TCP
+      port: 80       
+      targetPort: 80 
+  type: NodePort   
+
+
+we cant scale in scale out in Daemonset
+-------------------------------------
+
+
+
+namespace:
+
+kubectl create ns shammu
+
+
+pod:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: shammu
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+service:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: shammu
+spec:
+  selector:
+    app: nginx  # This should match the labels of your Deployment
+  ports:
+    - protocol: TCP
+      port: 80       # Port that the service will expose
+      targetPort: 80 # Port on the pod that the service should forward traffic to
+  type: LoadBalancer # Change to ClusterIP or NodePort based on your needs 
+
+
+--------------------------------------------
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+  namespace: default
+data:
+  DATABASE_URL: "postgres://user:password@hostname:5432/dbname"
+  REDIS_HOST: "redis-server"
+  REDIS_PORT: "6379"
+  APP_MODE: "production"
+  name: "shammu"
+  place: "hyd"
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod1
+  namespace: default
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+      env:
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: my-config
+              key: DATABASE_URL
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: my-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: my-config
+              key: REDIS_PORT
+        - name: APP_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: my-config
+              key: APP_MODE
+
+================================================
+kubectl exec nginx-pod1 -- printenv | grep DATABASE_URL
+==================================================
+========================================================================================================================
+
+secrets:
+
+
+kubectl create secret docker-registry shammu --docker-server=https://index.docker.io/v1/ --docker-username=shammu191 --docker-password=Shammu@101 --docker-email=shaikshammu191@gmail.com
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: private-reg-deployment
+spec:
+  replicas: 4  
+  selector:
+    matchLabels:
+      app: private-reg-app
+  template:
+    metadata:
+      labels:
+        app: private-reg-app
+    spec:
+      containers:
+      - name: private-reg-container
+        image: shammu191/shammu
+      imagePullSecrets:
+      - name: shammu
+
+
+=======================================================================================================================================
+
+
